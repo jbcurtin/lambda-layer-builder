@@ -1,0 +1,36 @@
+name: "build lambda layers for https://github.com/jbcurtin/lambda-layer-builder"
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  create-artifacts:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: [ '3.8.3' ]
+    name: "Create Artifacts - Python: ${{ matrix.python-version }}"
+    env:
+      PYTHONPATH: 'build-tools'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Build Chrome Lambda Layer
+        run: |
+          bash ./build-tools/sync-repo.py \
+            -u git@github.com:alixaxel/chrome-aws-lambda.git \
+            -c 954ddb8989abf832a96f9f3586efd6e5ed7f2ca1
+            -m "make chrome_aws_lambda.zip"
+            -d /tmp/build-chrome-lambda-layer
+      - name: Upload Chrom Lambda Layer
+        run: |
+          python ./build-tools/upload-layer.py \
+            -d /tmp/build-chrome-lambda-layer
+
